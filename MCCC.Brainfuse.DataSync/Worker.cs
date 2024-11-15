@@ -1,4 +1,4 @@
-﻿using System.Data.SqlClient;
+using System.Data.SqlClient;
 using System.Net;
 using System.Text.RegularExpressions;
 using Dapper;
@@ -42,7 +42,7 @@ public class Worker : BackgroundService
         var lookupStartDate = DateTime.Today.AddDays(-(_options.ReportLookBackPeriod ?? 1));
         var lookupStartDateString = lookupStartDate.ToString("MM/dd/yyyy");
         
-        var lookupEndDate = DateTime.Today;
+        var lookupEndDate = DateTime.Today.AddDays(-1);
         var lookupEndDateString = lookupEndDate.ToString("MM/dd/yyyy");
 
         if (!string.IsNullOrEmpty(_options.SpecificSearchDate))
