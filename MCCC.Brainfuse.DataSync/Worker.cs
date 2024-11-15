@@ -1,4 +1,4 @@
-using System.Data.SqlClient;
+﻿using System.Data.SqlClient;
 using System.Net;
 using System.Text.RegularExpressions;
 using Dapper;
@@ -25,7 +25,6 @@ public class Worker : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("Process has started.");
-        _logger.LogInformation("Test Mode is {TestMode}", _options.TestMode);
         _logger.LogInformation("Update Mode is {UpdateMode}", _options.UpdateMode);
 
         var reportLocation = _options.ExportLocation;
@@ -54,7 +53,6 @@ public class Worker : BackgroundService
         var courseMappings = GetCourseMappings(_options.McccTutorCourseMappingFile);
 
         var tutorData = new List<ColleagueTutoringSessionData>();
-
 
         var boostAttendanceData = await GetBoostAttendance(brainFuse, courseMappings, colleagueSqlWrapper, lookupStartDateString, lookupEndDateString);
 
@@ -179,8 +177,15 @@ public class Worker : BackgroundService
             }
         }
 
-        await WriteTutoringDataToCroa(tutorData);
-
+        if (_options.UpdateMode)
+        {
+            await WriteTutoringDataToCroa(tutorData);
+        }
+        else
+        {
+            _logger.LogInformation("Update mode set to false, not writing to ODS Database");
+        }
+        
         _logger.LogInformation("Process is done.");
         Environment.Exit(0);
     }

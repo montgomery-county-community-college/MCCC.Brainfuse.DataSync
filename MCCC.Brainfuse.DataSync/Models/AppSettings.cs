@@ -8,7 +8,6 @@ public class AppSettings
     public const string Configuration = "Configuration";
 
     public bool UpdateMode { get; set; }
-    public bool TestMode { get; set; }
     public bool UseProxy { get; set; }
 
     [Required] public ConnectionString ConnectionStrings { get; set; }
