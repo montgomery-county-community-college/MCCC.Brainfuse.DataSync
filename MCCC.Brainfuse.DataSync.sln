@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MCCC.Brainfuse.DataSync", "MCCC.Brainfuse.DataSync\MCCC.Brainfuse.DataSync.csproj", "{16D0FDD3-02DB-490A-8872-6E19645E77FD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MCCC.Brainfuse.API.Wrapper", "MCCC.Brainfuse.API.Wrapper\MCCC.Brainfuse.API.Wrapper.csproj", "{3D2F3EF5-3BD7-4DB3-92F0-DD7C0B74F56B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MCCC.Colleague.SQL.Wrapper", "MCCC.Colleague.SQL.Wrapper\MCCC.Colleague.SQL.Wrapper.csproj", "{E45BDC97-B823-422E-B4C5-9AD20CEB3ABF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{16D0FDD3-02DB-490A-8872-6E19645E77FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16D0FDD3-02DB-490A-8872-6E19645E77FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16D0FDD3-02DB-490A-8872-6E19645E77FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16D0FDD3-02DB-490A-8872-6E19645E77FD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D2F3EF5-3BD7-4DB3-92F0-DD7C0B74F56B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D2F3EF5-3BD7-4DB3-92F0-DD7C0B74F56B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D2F3EF5-3BD7-4DB3-92F0-DD7C0B74F56B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D2F3EF5-3BD7-4DB3-92F0-DD7C0B74F56B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E45BDC97-B823-422E-B4C5-9AD20CEB3ABF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E45BDC97-B823-422E-B4C5-9AD20CEB3ABF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E45BDC97-B823-422E-B4C5-9AD20CEB3ABF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E45BDC97-B823-422E-B4C5-9AD20CEB3ABF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
