@@ -1,4 +1,4 @@
-﻿using System.Data.SqlClient;
+using System.Data.SqlClient;
 using System.Net;
 using System.Text.RegularExpressions;
 using Dapper;
@@ -142,14 +142,32 @@ public class Worker : BackgroundService
                 continue;
             }
 
-            sessionData.CoursesForSubject = courseMappings.Where(cm => cm.BrainfuseSubject.Trim() == sessionData.Subject?.Trim()).Select(cm=>cm.McccCourse);
+            sessionData.CoursesForSubject = courseMappings
+                .Where(cm => cm.BrainfuseSubject.Trim() == sessionData.Subject?.Trim()).Select(cm => cm.McccCourse);
 
             var sessionDataCoursesForSubject = sessionData.CoursesForSubject.ToList();
             if (sessionDataCoursesForSubject.Count == 0)
             {
                 // no matches for subject
-                sessionData.Course = "BrainFuse subject has no mapped courses.";
-                continue;
+                _logger.LogDebug("No courses for subject: {subject}", sessionData.Subject);
+
+                // if there are no mappings for this subject, check if the subject matches (^(\w{3,4}) (\d{3,4}\w?)).*$ and use that as the course
+                if (sessionData.Subject == null)
+                {
+                    sessionData.Course = "BrainFuse subject is null.";
+                    continue;
+                }
+
+                var match = Regex.Match(sessionData.Subject, @"^(\w{3,4}) (\d{3,4}\w?)");
+                if (match.Success)
+                {
+                    sessionDataCoursesForSubject.Add(match.Value);
+                }
+                else
+                {
+                    sessionData.Course = "BrainFuse subject has no mapped courses.";
+                    continue;
+                }
             }
 
             if (coursesForStudents.TryGetValue(sessionData.StudentId, out var coursesForStudent))
