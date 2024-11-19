@@ -180,8 +180,7 @@ public class BrainfuseApiWrapper
         {
             searchEndDate = searchStartDate;
         }
-
-
+        
         var options = new JsonSerializerOptions
         {
             PropertyNamingPolicy = new BrainfuseDynamicParameterNamingPolicy(dynamicPropertyName),
@@ -200,13 +199,14 @@ public class BrainfuseApiWrapper
             var data = JsonSerializer.Deserialize<BrainfuseApiCall<T>>(initialResponseString);
 
             var numberOfResults = data?.BrainfusePages?.NumOfPages;
+            var sessionId = data?.BrainfusePages?.SessionId;
 
             var apiCalls = new List<string>();
 
             for (var i = 0; i < numberOfResults; i += _pageSize)
             {
                 apiCalls.Add(string.Format(endPointTemplate, searchStartDate, searchEndDate, _pageSize,
-                    i / _pageSize + 1));
+                    i / _pageSize + 1) + $"&__sessionId={sessionId}");
             }
 
             var throttler = new SemaphoreSlim(_threadCount);
