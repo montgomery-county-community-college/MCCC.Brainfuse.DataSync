@@ -7,7 +7,7 @@ public class ColleagueTutoringSessionData(string studentId, string integrationId
 {
     public string IntegrationId { get; set; } = integrationId;
     public string Source { get; set; } = source;
-    public string StudentId { get; set; } = studentId;
+    public string? StudentId { get; set; } = studentId;
     public DateTimeOffset StartDate { get; set; }
     public DateTimeOffset EndDate { get; set; }
     public string? Location { get; set; }

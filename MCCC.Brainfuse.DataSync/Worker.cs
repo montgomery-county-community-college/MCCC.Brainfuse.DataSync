@@ -1,4 +1,4 @@
-using System.Data.SqlClient;
+﻿using System.Data.SqlClient;
 using System.Net;
 using System.Text.RegularExpressions;
 using Dapper;
@@ -36,11 +36,10 @@ public class Worker : BackgroundService
         var brainFuse = new BrainfuseApiWrapper(baseUrl, _options.BrainfuseApiSettings.BrainfuseApiKey,
             _options.UseProxy, _options.BrainfuseApiSettings.ThreadCount,
             _options.BrainfuseApiSettings.PageSize);
-        
-        
+
         var lookupStartDate = DateTime.Today.AddDays(-(_options.ReportLookBackPeriod ?? 1));
         var lookupStartDateString = lookupStartDate.ToString("MM/dd/yyyy");
-        
+
         var lookupEndDate = DateTime.Today.AddDays(-1);
         var lookupEndDateString = lookupEndDate.ToString("MM/dd/yyyy");
 
@@ -54,7 +53,8 @@ public class Worker : BackgroundService
 
         var tutorData = new List<ColleagueTutoringSessionData>();
 
-        var boostAttendanceData = await GetBoostAttendance(brainFuse, courseMappings, colleagueSqlWrapper, lookupStartDateString, lookupEndDateString);
+        var boostAttendanceData = await GetBoostAttendance(brainFuse, courseMappings, colleagueSqlWrapper,
+            lookupStartDateString, lookupEndDateString);
 
         if (boostAttendanceData != null)
         {
@@ -67,29 +67,29 @@ public class Worker : BackgroundService
         if (liveSessions != null)
         {
             var liveSessionData = liveSessions.Select(e =>
-                {
-                    if (e.CollegeId == null) throw new ApplicationException($"Live session {e.EventId} College ID is null");
-                    
-                    var eventId = e.EventId;
-                    if (e.Type == "IA")
-                    {
-                        eventId = e.RequestId.ToString();
-                    }
+            {
+                if (e.CollegeId == null) throw new ApplicationException($"Live session {e.EventId} College ID is null");
 
-                    return new ColleagueTutoringSessionData(e.CollegeId, 
-                        $"live_session_{eventId}_{e.CollegeId}", 
-                        e.Source == "Other" ? "MCCC" : "Brainfuse")
-                    {
-                        SessionType = ColleagueTutoringSessionData.SessionTypes.LiveSession,
-                        StartDate = e.Date,
-                        EndDate = e.Date.AddMinutes(e.Minutes),
-                        Location = "Online",
-                        Subject = e.Subject,
-                        Course = $"Live Session for {e.Subject}",
-                        Provider = e.Source == "Other" ? "MCCC" : "Brainfuse",
-                        Attended = true, // Live attendance is always true
-                    };
-                }).ToList();
+                var eventId = e.EventId;
+                if (e.Type == "IA")
+                {
+                    eventId = e.RequestId.ToString();
+                }
+
+                return new ColleagueTutoringSessionData(e.CollegeId,
+                    $"live_session_{eventId}_{e.CollegeId}",
+                    e.Source == "Other" ? "MCCC" : "Brainfuse")
+                {
+                    SessionType = ColleagueTutoringSessionData.SessionTypes.LiveSession,
+                    StartDate = e.Date,
+                    EndDate = e.Date.AddMinutes(e.Minutes),
+                    Location = "Online",
+                    Subject = e.Subject,
+                    Course = $"Live Session for {e.Subject}",
+                    Provider = e.Source == "Other" ? "MCCC" : "Brainfuse",
+                    Attended = true, // Live attendance is always true
+                };
+            }).ToList();
             tutorData.AddRange(liveSessionData.DistinctBy(td => td.IntegrationId));
         }
 
@@ -97,14 +97,14 @@ public class Worker : BackgroundService
 
         if (writingLabAttendance != null)
         {
-            
             writingLabAttendance = writingLabAttendance.DistinctBy(wl => wl.Uid).ToList();
-            
+
             // create a mapper from BrainfuseWritingLab to ColleagueTutoringSessionData
             var writingLabAttendanceData = writingLabAttendance.Select(e =>
             {
                 if (e.CollegeId == null) throw new ApplicationException($"Writing Lab {e.Uid} College ID is null");
-                return new ColleagueTutoringSessionData(e.CollegeId, $"writing_lab_{e.Uid}_{e.CollegeId}", e.Source == "Other" ? "MCCC" : "Brainfuse")
+                return new ColleagueTutoringSessionData(e.CollegeId, $"writing_lab_{e.Uid}_{e.CollegeId}",
+                    e.Source == "Other" ? "MCCC" : "Brainfuse")
                 {
                     SessionType = ColleagueTutoringSessionData.SessionTypes.WritingLab,
                     StartDate = e.Date,
@@ -118,17 +118,16 @@ public class Worker : BackgroundService
             }).ToList();
             tutorData.AddRange(writingLabAttendanceData);
         }
-        
-        var studentId = boostAttendanceData.Select(ad => ad.StudentId);
+
+        var studentIds = tutorData.Where(td => !string.IsNullOrEmpty(td.StudentId)).Select(td => td.StudentId!);
 
         var coursesForStudents = (await colleagueSqlWrapper
-                .GetEnrollmentsForStudents(studentId))
+                .GetEnrollmentsForStudents(studentIds.Distinct()))
             .GroupBy(fs => fs.ColleagueId)
             .ToDictionary(fs => fs.Key, fs => fs);
-        
+
         foreach (var sessionData in tutorData)
         {
-
             _logger.LogDebug("Current student: {student}", sessionData.StudentId);
 
             if (sessionData.StudentId == null)
@@ -203,7 +202,7 @@ public class Worker : BackgroundService
         {
             _logger.LogInformation("Update mode set to false, not writing to ODS Database");
         }
-        
+
         _logger.LogInformation("Process is done.");
         Environment.Exit(0);
     }
@@ -212,7 +211,6 @@ public class Worker : BackgroundService
         IEnumerable<McccCourseMapping> courseMappings,
         ColleagueSqlWrapper colleagueSqlWrapper, string lookupStartDate, string lookupEndDate)
     {
-
         var boostAttendance = await brainFuse.GetBoostAttendance(lookupStartDate, lookupEndDate);
 
         if (boostAttendance == null)
@@ -230,7 +228,9 @@ public class Worker : BackgroundService
                 Subject = e.SubjectName,
                 CoursesForSubject = courseMappings.Where(cm => cm.BrainfuseSubject.Trim() == e.SubjectName?.Trim())
                     .Select(cm => cm.McccCourse).ToArray(),
-                Reason = Regex.Replace(e.Reason, @"\s+", " ").Replace("Focus/reason for appointment(copy and paste assignment instructions if applicable): ", ""),
+                Reason = Regex.Replace(e.Reason, @"\s+", " ")
+                    .Replace("Focus/reason for appointment(copy and paste assignment instructions if applicable): ",
+                        ""),
                 Provider = e.Provider,
                 Attended = e.Attended,
                 Notes = "Attended: " + (e.Attended ? "Yes" : "No")
@@ -268,21 +268,25 @@ public class Worker : BackgroundService
     private async Task WriteTutoringDataToCroa(List<ColleagueTutoringSessionData> tutoringSessionData)
     {
         DefaultTypeMap.MatchNamesWithUnderscores = true;
-        using var connection = new SqlConnection(_options.ConnectionStrings.Croa);
+        await using var connection = new SqlConnection(_options.ConnectionStrings.Croa);
 
         foreach (var record in tutoringSessionData)
         {
-            if (record.IntegrationId.Length > 50) _logger.LogInformation("IntegrationId record is too long: {IntegrationId}", record.IntegrationId);
+            if (record.IntegrationId.Length > 50)
+                _logger.LogInformation("IntegrationId record is too long: {IntegrationId}", record.IntegrationId);
             if (record.Source.Length > 50) _logger.LogInformation("Source record is too long: {Source}", record.Source);
-            if (record.StudentId.Length > 10) _logger.LogInformation("StudentId record is too long: {StudentId}", record.StudentId);
-            if (record.Location?.Length > 50) _logger.LogInformation("Location record is too long: {Location}", record.Location);
+            if (record.StudentId.Length > 10)
+                _logger.LogInformation("StudentId record is too long: {StudentId}", record.StudentId);
+            if (record.Location?.Length > 50)
+                _logger.LogInformation("Location record is too long: {Location}", record.Location);
             if (record.Course?.Length > 200) _logger.LogDebug("Course record is too long: {Course}", record.Course);
             if (record.Reason?.Length > 1024)
             {
                 _logger.LogInformation("Reason record is too long: {Reason}", record.Reason);
             }
 
-            if (record.Provider?.Length > 200) _logger.LogInformation("Provider record is too long: {Provider}", record.Provider);
+            if (record.Provider?.Length > 200)
+                _logger.LogInformation("Provider record is too long: {Provider}", record.Provider);
         }
 
         const string query = """
@@ -295,10 +299,10 @@ public class Worker : BackgroundService
         {
             await connection.ExecuteAsync(query, tutoringSessionData);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             _logger.LogError(ex, "Error while writing tutoring data to Croa file");
-            
+
             Environment.Exit(1);
         }
     }
