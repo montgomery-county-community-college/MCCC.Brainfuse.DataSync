@@ -119,7 +119,10 @@ public class Worker : BackgroundService
             tutorData.AddRange(writingLabAttendanceData);
         }
 
-        var studentIds = tutorData.Where(td => !string.IsNullOrEmpty(td.StudentId)).Select(td => td.StudentId!);
+        tutorData = tutorData.Where(td => !string.IsNullOrEmpty(td.StudentId)).ToList();
+
+        var studentIds = tutorData.Where(td => !string.IsNullOrEmpty(td.StudentId))
+            .Select(td => td.StudentId!);
 
         var coursesForStudents = (await colleagueSqlWrapper
                 .GetEnrollmentsForStudents(studentIds.Distinct()))
