@@ -1,6 +1,8 @@
 ﻿using System.Data.SqlClient;
+using System.Globalization;
 using System.Net;
 using System.Text.RegularExpressions;
+using CsvHelper;
 using Dapper;
 using MCCC.Brainfuse.API.Wrapper;
 using MCCC.Brainfuse.DataSync.Models;
@@ -43,10 +45,19 @@ public class Worker : BackgroundService
         var lookupEndDate = DateTime.Today.AddDays(-1);
         var lookupEndDateString = lookupEndDate.ToString("MM/dd/yyyy");
 
+        if (!string.IsNullOrEmpty(_options.SpecificSearchDate) && !string.IsNullOrEmpty(_options.ReportStartDate))
+        {
+            throw new ArgumentException("SpecificSearchDate and ReportStartDate should not both be set.");
+        }
+
         if (!string.IsNullOrEmpty(_options.SpecificSearchDate))
         {
             lookupStartDateString = _options.SpecificSearchDate;
             lookupEndDateString = _options.SpecificSearchDate;
+        }
+        else if (!string.IsNullOrEmpty(_options.ReportStartDate))
+        {
+            lookupStartDateString = _options.ReportStartDate;
         }
 
         var courseMappings = GetCourseMappings(_options.McccTutorCourseMappingFile);
@@ -77,7 +88,7 @@ public class Worker : BackgroundService
                 }
 
                 return new ColleagueTutoringSessionData(e.CollegeId,
-                    $"live_session_{eventId}_{e.CollegeId}",
+                    $"live_session_{eventId}_{e.CollegeId}_{e.Date:yyyyMMdd_HHmmss}",
                     e.Source == "Other" ? "MCCC" : "Brainfuse")
                 {
                     SessionType = ColleagueTutoringSessionData.SessionTypes.LiveSession,
@@ -103,7 +114,7 @@ public class Worker : BackgroundService
             var writingLabAttendanceData = writingLabAttendance.Select(e =>
             {
                 if (e.CollegeId == null) throw new ApplicationException($"Writing Lab {e.Uid} College ID is null");
-                return new ColleagueTutoringSessionData(e.CollegeId, $"writing_lab_{e.Uid}_{e.CollegeId}",
+                return new ColleagueTutoringSessionData(e.CollegeId, $"writing_lab_{e.Uid}_{e.CollegeId}_{e.Date:yyyyMMdd_HHmmss}",
                     e.Source == "Other" ? "MCCC" : "Brainfuse")
                 {
                     SessionType = ColleagueTutoringSessionData.SessionTypes.WritingLab,
@@ -199,7 +210,14 @@ public class Worker : BackgroundService
 
         if (_options.UpdateMode)
         {
-            await WriteTutoringDataToCroa(tutorData);
+            if (_options.ExportType == "CROA")
+            {
+                await WriteTutoringDataToCroa(tutorData);
+            }
+            else if (_options.ExportType == "CSV")
+            {
+                await WriteTutoringDataToCsv(tutorData);
+            }
         }
         else
         {
@@ -208,6 +226,15 @@ public class Worker : BackgroundService
 
         _logger.LogInformation("Process is done.");
         Environment.Exit(0);
+    }
+
+    private async Task WriteTutoringDataToCsv(List<ColleagueTutoringSessionData> tutorData)
+    {
+        var reportLocation = _options.ExportLocation + @"\Tutor_Data.csv";
+
+        await using var writer = new StreamWriter(reportLocation);
+        await using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
+        await csv.WriteRecordsAsync(tutorData);
     }
 
     private async Task<List<ColleagueTutoringSessionData>?> GetBoostAttendance(BrainfuseApiWrapper brainFuse,

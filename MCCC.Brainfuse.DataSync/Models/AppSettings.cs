@@ -17,7 +17,12 @@ public class AppSettings
     [Required] public string ExportLocation { get; set; } = string.Empty;
 
     public int? ReportLookBackPeriod { get; set; }
+    
+    public string? ReportStartDate { get; set; }
+    
     public string? SpecificSearchDate { get; set; }
+    
+    public string? ExportType { get; set; }
     
     public BrainfuseApiSettings BrainfuseApiSettings { get; set; }
 }
