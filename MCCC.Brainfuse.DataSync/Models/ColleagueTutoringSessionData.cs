@@ -3,11 +3,17 @@ using MCCC.Colleague.SQL.Wrapper.Models;
 
 namespace MCCC.Brainfuse.DataSync.Models;
 
-public class ColleagueTutoringSessionData(string studentId, string integrationId, string source)
+public class ColleagueTutoringSessionData()
 {
-    public string IntegrationId { get; set; } = integrationId;
-    public string Source { get; set; } = source;
-    public string? StudentId { get; set; } = studentId;
+    public ColleagueTutoringSessionData(string studentId, string integrationId, string source) : this()
+    {
+        this.StudentId = studentId;
+        this.IntegrationId = integrationId;
+        this.Source = source;
+    }
+    public string IntegrationId { get; set; }
+    public string Source { get; set; }
+    public string? StudentId { get; set; }
     public DateTimeOffset StartDate { get; set; }
     public DateTimeOffset EndDate { get; set; }
     public string? Location { get; set; }

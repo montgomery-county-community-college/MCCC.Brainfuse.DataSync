@@ -21,8 +21,11 @@ public class AppSettings
     public string? ReportStartDate { get; set; }
     
     public string? SpecificSearchDate { get; set; }
+    public string? SpecificEndDate { get; set; }
     
     public string? ExportType { get; set; }
+    public bool StarfishExport { get; set; }
+    public string? StarfishExportLocation { get; set; }
     
     public BrainfuseApiSettings BrainfuseApiSettings { get; set; }
 }

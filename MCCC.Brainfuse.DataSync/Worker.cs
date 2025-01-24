@@ -53,7 +53,7 @@ public class Worker : BackgroundService
         if (!string.IsNullOrEmpty(_options.SpecificSearchDate))
         {
             lookupStartDateString = _options.SpecificSearchDate;
-            lookupEndDateString = _options.SpecificSearchDate;
+            lookupEndDateString = !string.IsNullOrEmpty(_options.SpecificEndDate) ? _options.SpecificEndDate : _options.SpecificSearchDate;
         }
         else if (!string.IsNullOrEmpty(_options.ReportStartDate))
         {
@@ -218,6 +218,10 @@ public class Worker : BackgroundService
             {
                 await WriteTutoringDataToCsv(tutorData);
             }
+            if (_options.StarfishExport)
+            {
+                await WriteTutoringDataToStarfishFile();
+            }
         }
         else
         {
@@ -226,6 +230,46 @@ public class Worker : BackgroundService
 
         _logger.LogInformation("Process is done.");
         Environment.Exit(0);
+    }
+
+    private async Task WriteTutoringDataToStarfishFile()
+    {
+        var reportLocation = _options.ExportLocation + @"\brainfuse_meetings.csv";
+
+        var tutorDataQuery = "SELECT * FROM [dbo].[M45_VW_STARFISH_BRAINFUSE_MEETINGS];";
+        
+        DefaultTypeMap.MatchNamesWithUnderscores = true;
+        await using var connection = new SqlConnection(_options.ConnectionStrings.Croa);
+        
+        try
+        {
+            var croaTutorData = await connection.QueryAsync<ColleagueTutoringSessionData>(tutorDataQuery);
+            
+            var tutorData = croaTutorData.Select(t => new StarfishMeeting
+            {
+                IntegrationId = t.IntegrationId,
+                StudentId = t.StudentId,
+                Source = t.Source,
+                StartDt = t.StartDate.ToString("yyyy-mm-dd hh:mm:ss"),
+                EndDt = t.EndDate.ToString("yyyy-mm-dd hh:mm:ss"),
+                Location = t.Location,
+                Course = t.Course,
+                Reason = t.Reason,
+                ProviderName = t.Provider,
+                Notes = t.Notes,
+            });
+            
+            await using var writer = new StreamWriter(reportLocation);
+            await using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
+            await csv.WriteRecordsAsync(tutorData);
+            
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error while writing tutoring data to Croa file");
+
+            Environment.Exit(1);
+        }
     }
 
     private async Task WriteTutoringDataToCsv(List<ColleagueTutoringSessionData> tutorData)
@@ -320,10 +364,16 @@ public class Worker : BackgroundService
         }
 
         const string query = """
-                             INSERT INTO M45_STARFISH_BRAINFUSE_MEETINGS 
-                             (integration_id, source, student_id, start_dt, end_dt, location, subject, course, reason, provider_name, notes, attended, session_type) 
-                             VALUES 
-                             (@IntegrationId, @Source, @StudentId, @StartDate, @EndDate, @Location, @Subject, @Course, @Reason, @Provider, @Notes, @Attended, @SessionType)
+                             MERGE M45_STARFISH_BRAINFUSE_MEETINGS AS target
+                             USING (VALUES (@IntegrationId, @Source, @StudentId, @StartDate, @EndDate, @Location, @Subject, @Course, @Reason, @Provider, @Notes, @Attended, @SessionType)) AS source (integration_id, source, student_id, start_dt, end_dt, location, subject, course, reason, provider_name, notes, attended, session_type)
+                             ON (target.integration_id = source.integration_id)
+                             WHEN MATCHED THEN
+                                 UPDATE SET Course = source.Course, Attended = source.Attended
+                             WHEN NOT MATCHED THEN
+                                 INSERT 
+                                 (integration_id, source, student_id, start_dt, end_dt, location, subject, course, reason, provider_name, notes, attended, session_type) 
+                                 VALUES 
+                                 (@IntegrationId, @Source, @StudentId, @StartDate, @EndDate, @Location, @Subject, @Course, @Reason, @Provider, @Notes, @Attended, @SessionType);
                              """;
         try
         {
