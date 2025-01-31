@@ -28,6 +28,7 @@ public class Worker : BackgroundService
     {
         _logger.LogInformation("Process has started.");
         _logger.LogInformation("Update Mode is {UpdateMode}", _options.UpdateMode);
+        _logger.LogInformation("Export Type is {ExportType}", _options.ExportType);
 
         var reportLocation = _options.ExportLocation;
 
@@ -234,7 +235,7 @@ public class Worker : BackgroundService
 
     private async Task WriteTutoringDataToStarfishFile()
     {
-        var reportLocation = _options.ExportLocation + @"\brainfuse_meetings.csv";
+        var reportLocation = _options.StarfishExportLocation + @"\brainfuse_meetings.csv";
 
         var tutorDataQuery = """
                              SELECT integration_id
