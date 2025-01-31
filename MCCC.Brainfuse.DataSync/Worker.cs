@@ -236,7 +236,19 @@ public class Worker : BackgroundService
     {
         var reportLocation = _options.ExportLocation + @"\brainfuse_meetings.csv";
 
-        var tutorDataQuery = "SELECT * FROM [dbo].[M45_VW_STARFISH_BRAINFUSE_MEETINGS];";
+        var tutorDataQuery = """
+                             SELECT integration_id
+                                  , source
+                                  , student_id
+                                  , start_dt as start_date
+                                  , end_dt   as end_date
+                                  , location
+                                  , course
+                                  , reason
+                                  , provider_name
+                                  , notes
+                             FROM [dbo].[M45_VW_STARFISH_BRAINFUSE_MEETINGS];
+                             """;
         
         DefaultTypeMap.MatchNamesWithUnderscores = true;
         await using var connection = new SqlConnection(_options.ConnectionStrings.Croa);
@@ -250,8 +262,8 @@ public class Worker : BackgroundService
                 IntegrationId = t.IntegrationId,
                 StudentId = t.StudentId,
                 Source = t.Source,
-                StartDt = t.StartDate.ToString("yyyy-mm-dd hh:mm:ss"),
-                EndDt = t.EndDate.ToString("yyyy-mm-dd hh:mm:ss"),
+                StartDt = t.StartDate.ToString("yyyy-MM-dd hh:mm:ss"),
+                EndDt = t.EndDate.ToString("yyyy-MM-dd hh:mm:ss"),
                 Location = t.Location,
                 Course = t.Course,
                 Reason = t.Reason,
